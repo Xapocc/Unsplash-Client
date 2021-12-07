@@ -1,12 +1,13 @@
 import 'dart:convert';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:http/http.dart' as http;
+import 'photos_list.dart';
+import 'photo.dart';
 
-void main() => runApp(const MyApp());
+void main() => runApp(const MaterialApp(home: MyApp()));
 
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -56,6 +57,7 @@ class MyApp extends StatelessWidget {
                     ),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(8.0, 0, 0, 0),
+                      // Search button
                       child: TextButton(
                         onPressed: () {},
                         child: const Padding(
@@ -86,10 +88,12 @@ class MyApp extends StatelessWidget {
                     ),
                   );
                 }
-
                 // Displaying photos
                 if (snapshot.hasData) {
-                  return Flexible(child: PhotosList(photos: snapshot.data!));
+                  return Flexible(child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: PhotosList(photos: snapshot.data!),
+                  ));
                 } else {
                   return const Center(
                     child: CircularProgressIndicator(
@@ -119,75 +123,3 @@ List<Photo> parsePhotos(String responseBody) {
 
   return parsed.map<Photo>((json) => Photo.fromJson(json)).toList();
  }
-
-class PhotosList extends StatelessWidget {
-  const PhotosList({Key? key, required this.photos}) : super(key: key);
-
-  final List<Photo> photos;
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.builder(
-      itemCount: photos.length,
-      itemBuilder: (context, index) {
-        return Center(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Image.network(photos[index].smallImageUrl,
-                fit: BoxFit.fitWidth,
-              ), // Image itself
-              Padding(
-                padding: const EdgeInsets.fromLTRB(8.0, 16.0, 8.0, 48.0),
-                child: Row( // Info about author
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    ClipRRect( // Rounding profile image corners to circle
-                      borderRadius: const BorderRadius.all(Radius.circular(90.0)),
-                      child: Image.network(photos[index].userProfileImageUrl), // Author`s profile image
-                    ),
-                    Padding( // Padding between profile image and username
-                      padding: const EdgeInsets.fromLTRB(8.0, 0.0, 0.0, 0.0),
-                      child: Text(photos[index].userName),
-                    )
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-class Photo {
-  final String userName;
-  final String userProfileImageUrl;
-  final String smallImageUrl;
-  final String rawImageUrl;
-  final int width;
-  final int height;
-
-  const Photo({
-    required this.userName,
-    required this.userProfileImageUrl,
-    required this.smallImageUrl,
-    required this.rawImageUrl,
-    required this.width,
-    required this.height,
-  });
-
-  // factory returns new Photo object
-  factory Photo.fromJson(Map<String, dynamic> json) {
-    return Photo(
-      userName: json['user']['username'].toString(),
-      userProfileImageUrl: json['user']['profile_image']['small'].toString(),
-      smallImageUrl: json['urls']['regular'].toString(),
-      rawImageUrl: json['urls']['raw'].toString(),
-      width: json['width'] as int,
-      height: json['height'] as int,
-    );
-  }
-}
