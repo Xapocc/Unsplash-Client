@@ -9,8 +9,6 @@ import 'photo.dart';
 
 void main() => runApp(const MaterialApp(home: MyApp()));
 
-int a = 0;
-
 class MyApp extends StatefulWidget {
   const MyApp({Key? key}) : super(key: key);
 
@@ -23,7 +21,10 @@ class _MyAppState extends State<MyApp> {
 
   static const String appTitle = 'Unsplash client';
   String searchQuery = "";
+  int page = 1;
   final searchQueryController = TextEditingController();
+  List<Photo> photos = List<Photo>.empty();
+  double listViewOffset = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +75,9 @@ class _MyAppState extends State<MyApp> {
                       child: TextButton(
                         onPressed: () {
                           setState(() {
+                            page = 1;
                             searchQuery = searchQueryController.text;
+                            photos.clear();
                           });
                         },
                         child: const Padding(
@@ -94,8 +97,9 @@ class _MyAppState extends State<MyApp> {
             ), // search bar
             // Photo cards list
             FutureBuilder<List<Photo>>(
-              future: getPhotos(http.Client(), searchQuery, 1),
+              future: getPhotos(http.Client(), searchQuery, page),
               builder: (context, snapshot) {
+
                 // If something went wrong while getting photos
                 if(snapshot.hasError) {
                   return const Center(
@@ -105,13 +109,34 @@ class _MyAppState extends State<MyApp> {
                     ),
                   );
                 }
-                // Displaying photos
-                if (snapshot.hasData) {
+
+                if (snapshot.connectionState != ConnectionState.waiting) {
+
+                  if(photos.isEmpty || photos.last.regularImageUrl != snapshot.data!.last.regularImageUrl) {
+                    photos = photos + snapshot.data!;
+                  }
+                  // Displaying photos
                   return Flexible(
                       child: Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: PhotosList(photos: snapshot.data!),
-                    )
+                      child: NotificationListener(
+                        child: PhotosList(photos: photos, offset: listViewOffset),
+                        onNotification: (t) {
+                          if(t is ScrollEndNotification) {
+                            if(t.metrics.atEdge) {
+                              if(t.metrics.pixels != 0) {
+                                setState(() {
+                                  listViewOffset = t.metrics.pixels;
+                                  page++;
+                                });
+                                return true;
+                              }
+                            }
+                          }
+                          return false;
+                          },
+                        ),
+                      )
                   );
                 } else {
                   return const Center(
@@ -149,6 +174,8 @@ Future<List<Photo>> getPhotos(http.Client client, String query, int page) async 
 
 List<Photo> parsePhotos(String responseBody, bool isSearched) {
   final parsed = jsonDecode(responseBody);
+
+  print("kek");
 
   return
   isSearched ?

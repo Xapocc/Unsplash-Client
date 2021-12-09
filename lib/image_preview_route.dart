@@ -32,7 +32,10 @@ class ImagePreviewRoute extends StatelessWidget {
                   },
                   errorBuilder: (context, url, error) {
                     return const Center(
-                        child: Text('Something went wrong when downloading photo!\nPlease try again.')
+                        child: Text(
+                          'Something went wrong when downloading photo!\nPlease try again.',
+                          style: TextStyle(color: Colors.white),
+                        )
                     );
                   },
                 ),
